@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>短URL清单</title>
+    <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/rowColor.js"></script>
+</head>
+<body>
+<div id="divVueApp">
+    <div>注： 把id拼接到 {{domain}} 后面，就是这一条记录的短url.<br>
+        比如id是 1aZde4，那么短url就是 {{domain}}1aZde4<br>
+        把这个网址分享出去，或转成二维码分享出去就可以了
+    </div>
+    <table border="0" style="border: none">
+        <tr style="height: 22px;">
+            <td style="width: 100px; text-align: right">
+                Url：
+            </td>
+            <td>
+                <input type="text" v-model="condition.url" style="width: 300px;" />
+            </td>
+        </tr>
+        <tr style="height: 22px;">
+            <td style="width: 100px; text-align: right">
+                Desc：
+            </td>
+            <td>
+                <input type="text" v-model="condition.desc" style="width: 300px;" />
+            </td>
+        </tr>
+        <tr style="height: 22px;">
+            <td colspan="2">
+                <input type="button" value="添加" @click="addRecord">
+            </td>
+        </tr>
+    </table>
+    <table border="1" cellpadding="0" cellspacing="0">
+        <tbody>
+        <tr style="background-color: #fedcbd;">
+            <th style="width: 80px;">id</th>
+            <th style="width: 400px;">url</th>
+            <th style="width: 300px;">desc</th>
+            <th style="width: 200px;">addtime</th>
+            <th style="width: 200px;">addip</th>
+            <th style="width: 400px;">短网址</th>
+        </tr>
+        <tr v-show="!arrData.length">
+            <td colspan="5" style="text-align: center;">未找到数据</td>
+        </tr>
+        <tr v-for="item in arrData" onmouseover='onRowOver(this);' onmouseout='onRowOut(this);' onclick='onRowClick(this);'>
+            <td>{{ convertToStr(item.id) }}</td>
+            <td><a target="_blank" :href="item.url">{{ item.url }}</a></td>
+            <td>{{ item.desc }}</td>
+            <td>{{ item.addtime }}</td>
+            <td>{{ item.addip }}</td>
+            <td><a target="_blank" :href="domain + convertToStr(item.id)">{{ domain }}{{ convertToStr(item.id) }}</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<script>
+    var vueApp = new Vue({
+        el: '#divVueApp',
+        created: function () {
+            let _vue = this;
+            let url = location.href;
+            let idx = url.indexOf('/', 10);
+            if(idx > 0)
+                url = url.substring(0, idx);
+            _vue.domain = url + '?';
+
+            _vue.loadData();
+        },
+        data: {
+            domain: '',
+            arrData: [],
+            condition: {
+                url: 'https://',
+                desc: ''
+            }
+        },
+        methods:{
+            loadData: function(){
+                let _vue = this;
+                axios.get('/all').then(function(response){
+                    _vue.arrData = response.data;
+                }).catch(function (error) {
+                    console.log(error.message);
+                });
+            },
+            addRecord: function(){
+                let _vue = this;
+                let url = '/?url=' + encodeURIComponent(_vue.condition.url) + '&desc=' + encodeURIComponent(_vue.condition.desc);
+                axios.post(url).then(function(response){
+                    if(response.data != '-1')
+                        _vue.loadData();
+                    else
+                        alert('添加失败: url重复了');
+                }).catch(function (error) {
+                    if(error.response && error.response.data && error.response.data.message)
+                        alert('添加失败:' + error.response.data.message);
+                    elee
+                        alert('添加失败:' + error.message);
+                });
+            },
+            convertToStr: function(num) {
+                let _arrChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+                let n = _arrChars.length;
+
+                let ret = '';
+                do
+                {
+                    let perNum = (num % n);
+                    num = Math.floor(num / n);
+                    ret = _arrChars.charAt(perNum) + ret;
+                } while (num > 0);
+
+                ret = '00000' + ret;
+                return ret.substring(ret.length - 6);
+            }
+        }
+    });
+</script>
+</body>
+</html>
