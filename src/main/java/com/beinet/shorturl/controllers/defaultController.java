@@ -3,6 +3,7 @@ package com.beinet.shorturl.controllers;
 import com.beinet.shorturl.repository.entity.urls;
 import com.beinet.shorturl.repository.urlsRepository;
 import com.beinet.shorturl.util;
+import lombok.Synchronized;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,33 +57,41 @@ public class defaultController {
     /**
      * 添加一个短网址
      * @param request 请求上下文
+     * @param id 大于0表示更新
      * @param url 要保存的url
      * @param desc 要保存的说明信息
      * @return 得到的id
      * @throws Exception 可能的转换异常
      */
     @PostMapping
-    public String addUrl(HttpServletRequest request, String url, String desc) throws Exception {
+    public String addUrl(HttpServletRequest request, Long id, String url, String desc) throws Exception {
+        // 用于Demo站点，不允许创建超过1万行
+        urls record = _repository.findTopByOrderByIdDesc();
+        if(record != null && record.getId() > 10000)
+            throw new Exception("Demo code only add 10000 record.");
+
         if (!util.isUrl(url))
             throw new Exception("argument url is invalid: " + url);
+         url = url.trim();
 
         // todo: 验证url是否有效，返回的响应码大于399时，报错
 
         // 验证url是否已经存在，存在时，不新增。注：url列未建索引，数据大了可能性能低下
-        url = url.trim();
-        if(_repository.existsByUrl(url))
-            return "-1";
+        // if(_repository.existsByUrl(url))
+        //    return "-1";
 
         if (desc == null)
             desc = "";
 
-        urls record = new urls();
+        record = new urls();
+        if(id > 0)
+            record.setId(id);
         record.setUrl(url);
         record.setDesc(desc.trim());
         record.setAddtime(LocalDateTime.now());
         record.setAddip(util.getClientIP(request));
 
-        record = _repository.save(record);
+        record = saveRecord(record);
         String ret = util.ConvertToStr(record.getId());
         return ret;
     }
@@ -90,5 +99,10 @@ public class defaultController {
     @GetMapping("all")
     public List<urls> getAll() {
         return _repository.findAll();
+    }
+
+    @Synchronized // Sqlite增删改，要串行
+    urls saveRecord(urls record) {
+        return _repository.save(record);
     }
 }

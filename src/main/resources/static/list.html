@@ -28,7 +28,9 @@
         </tr>
         <tr style="height: 22px;">
             <td colspan="2">
-                <input type="button" value="添加新的短网址" @click="addRecord">
+                <input type="button" value="取消更新" @click="cancelUpdagte" v-show="condition.id>0">
+                <input type="button" :value="btn" @click="addRecord">
+                <input type="button" value="批量添加10个短网址" @click="addRecord10">
                 注： 把短网址分享出去，或转成二维码分享出去 就可以了
             </td>
         </tr>
@@ -40,6 +42,7 @@
             <th style="width: 400px;">跳转地址</th>
             <th style="width: 300px;">备注</th>
             <th style="width: 200px;">添加时间/IP</th>
+            <th></th>
         </tr>
         <tr v-show="!arrData.length">
             <td colspan="5" style="text-align: center;">未找到数据</td>
@@ -52,6 +55,7 @@
                 <span style="color: blue;">{{ item.addtime }}</span> <br>
                 {{ item.addip }}
             </td>
+            <td><input type="button" value="编辑" @click="editRecord(item)"></td>
         </tr>
         </tbody>
     </table>
@@ -74,7 +78,15 @@
             arrData: [],
             condition: {
                 url: 'https://',
-                desc: ''
+                desc: '',
+                id: 0
+            }
+        },
+        computed: {
+            btn: function(){
+                if(this.condition.id <= 0)
+                    return '添加新的短网址';
+                return '更新短网址';
             }
         },
         methods:{
@@ -86,20 +98,57 @@
                     console.log(error.message);
                 });
             },
-            addRecord: function(){
+            addRecord: function() {
                 let _vue = this;
-                let url = '/?url=' + encodeURIComponent(_vue.condition.url) + '&desc=' + encodeURIComponent(_vue.condition.desc);
-                axios.post(url).then(function(response){
-                    if(response.data != '-1')
+
+                if (_vue.condition.url.length <= 8) {
+                    alert('请正确输入网址');
+                    return;
+                }
+                _vue.addRecordReal(true, _vue);
+            },
+            addRecord10: function() {
+                let _vue = this;
+
+                if (_vue.condition.url.length <= 8) {
+                    alert('请正确输入网址');
+                    return;
+                }
+                if(this.condition.id > 0){
+                    alert('更新时不能操作');
+                    return;
+                }
+                for (let i = 0; i < 10; i++) {
+                    _vue.addRecordReal(false, _vue);
+                }
+                setTimeout(function () {_vue.loadData();}, 3000);
+            },
+            addRecordReal: function(refresh, _vue) {
+                let url = '/?id=' + _vue.condition.id + '&url=' + encodeURIComponent(_vue.condition.url) + '&desc=' + encodeURIComponent(_vue.condition.desc);
+                axios.post(url).then(function (response) {
+                    if (!refresh)
+                        return;
+                    _vue.cancelUpdagte();
+                    if (response.data != '-1')
                         _vue.loadData();
                     else
                         alert('添加失败: url重复了');
                 }).catch(function (error) {
-                    if(error.response && error.response.data && error.response.data.message)
+                    if (error.response && error.response.data && error.response.data.message)
                         alert('添加失败:' + error.response.data.message);
-                    elee
+                    else
                         alert('添加失败:' + error.message);
                 });
+            },
+            editRecord: function(item) {
+                this.condition.id = item.id;
+                this.condition.url = item.url;
+                this.condition.desc = item.desc;
+            },
+            cancelUpdagte: function() {
+                this.condition.id = 0;
+                this.condition.url = 'http://';
+                this.condition.desc = '';
             },
             convertToStr: function(num) {
                 let _arrChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
