@@ -9,22 +9,18 @@
 </head>
 <body>
 <div id="divVueApp">
-    <div>注： 把id拼接到 {{domain}} 后面，就是这一条记录的短url.<br>
-        比如id是 1aZde4，那么短url就是 {{domain}}1aZde4<br>
-        把这个网址分享出去，或转成二维码分享出去就可以了
-    </div>
     <table border="0" style="border: none">
         <tr style="height: 22px;">
-            <td style="width: 100px; text-align: right">
-                Url：
+            <td style="width: 80px; text-align: right">
+                跳转地址：
             </td>
             <td>
                 <input type="text" v-model="condition.url" style="width: 300px;" />
             </td>
         </tr>
         <tr style="height: 22px;">
-            <td style="width: 100px; text-align: right">
-                Desc：
+            <td style="text-align: right">
+                备注：
             </td>
             <td>
                 <input type="text" v-model="condition.desc" style="width: 300px;" />
@@ -32,30 +28,30 @@
         </tr>
         <tr style="height: 22px;">
             <td colspan="2">
-                <input type="button" value="添加" @click="addRecord">
+                <input type="button" value="添加新的短网址" @click="addRecord">
+                注： 把短网址分享出去，或转成二维码分享出去 就可以了
             </td>
         </tr>
     </table>
     <table border="1" cellpadding="0" cellspacing="0">
         <tbody>
         <tr style="background-color: #fedcbd;">
-            <th style="width: 80px;">id</th>
-            <th style="width: 400px;">url</th>
-            <th style="width: 300px;">desc</th>
-            <th style="width: 200px;">addtime</th>
-            <th style="width: 200px;">addip</th>
-            <th style="width: 400px;">短网址</th>
+            <th style="width: 300px;">短网址(可点击测试)</th>
+            <th style="width: 400px;">跳转地址</th>
+            <th style="width: 300px;">备注</th>
+            <th style="width: 200px;">添加时间/IP</th>
         </tr>
         <tr v-show="!arrData.length">
             <td colspan="5" style="text-align: center;">未找到数据</td>
         </tr>
         <tr v-for="item in arrData" onmouseover='onRowOver(this);' onmouseout='onRowOut(this);' onclick='onRowClick(this);'>
-            <td>{{ convertToStr(item.id) }}</td>
+            <td><a target="_blank" :href="domain + convertToStr(item.id)">{{ domain }}{{ convertToStr(item.id) }}</a></td>
             <td><a target="_blank" :href="item.url">{{ item.url }}</a></td>
             <td>{{ item.desc }}</td>
-            <td>{{ item.addtime }}</td>
-            <td>{{ item.addip }}</td>
-            <td><a target="_blank" :href="domain + convertToStr(item.id)">{{ domain }}{{ convertToStr(item.id) }}</a></td>
+            <td>
+                <span style="color: blue;">{{ item.addtime }}</span> <br>
+                {{ item.addip }}
+            </td>
         </tr>
         </tbody>
     </table>
@@ -85,7 +81,7 @@
             loadData: function(){
                 let _vue = this;
                 axios.get('/all').then(function(response){
-                    _vue.arrData = response.data;
+                    _vue.arrData = response.data.reverse();
                 }).catch(function (error) {
                     console.log(error.message);
                 });
@@ -116,9 +112,11 @@
                     num = Math.floor(num / n);
                     ret = _arrChars.charAt(perNum) + ret;
                 } while (num > 0);
+                if(ret.length >= 3)
+                    return ret;
 
-                ret = '00000' + ret;
-                return ret.substring(ret.length - 6);
+                ret = '00' + ret;
+                return ret.substring(ret.length - 3);
             }
         }
     });

@@ -84,9 +84,9 @@ public class util {
         //1234 = 1* 62^(4-1-0) + 1* 62^(4-1-1)
         for (int i = 0, j = str.length(); i < j; i++) {
             Integer num = ArrBitNum.get(str.charAt(i));
-            if (num == null)
-                throw new Exception("Contains unknown char: " + str.charAt(i));
-            if (num > 0)
+//            if (num == null)
+//                throw new Exception("Contains unknown char: " + str.charAt(i));
+            if (num != null && num > 0)
                 ret += (long) (num * Math.pow(n, j - 1 - i));
         }
 
