@@ -3,11 +3,16 @@ package com.beinet.shorturl;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Pattern;
 
-public class util {
+public class Util {
     private static String _arrChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static Map<Character, Integer> ArrBitNum;
+
+    // 用于生成短码
+    private static Random random = new Random();
+
     static {
         ArrBitNum = InitArr();
     }
@@ -15,6 +20,7 @@ public class util {
 
     /**
      * 获取url里的id，比如 ?abcd
+     *
      * @param request
      * @return null或读取到的id
      */
@@ -32,6 +38,7 @@ public class util {
 
     /**
      * 返回客户端的IP和代理IP。
+     *
      * @param request 请求上下文
      * @return IP
      */
@@ -48,11 +55,12 @@ public class util {
 
     /**
      * 验证给出的字符串，是否url网址格式
+     *
      * @param url 字符串
      * @return 是否
      */
-    public static boolean isUrl(String url){
-        if(url == null || url.length() <= 0)
+    public static boolean isUrl(String url) {
+        if (url == null || url.length() <= 0)
             return false;
 
         Pattern regex = Pattern.compile("(?i)https?://[^\\s]+\\.[^\\s]+");
@@ -61,6 +69,7 @@ public class util {
 
     /**
      * 把62进制转换为十进制
+     *
      * @param str 62进制的字符串
      * @return 十进制数
      */
@@ -70,8 +79,9 @@ public class util {
 
     /**
      * 把n进制转换为十进制
+     *
      * @param str n进制的字符串
-     * @param n n进制
+     * @param n   n进制
      * @return 十进制数
      */
     public static long ConvertToNum(String str, int n) throws Exception {
@@ -95,6 +105,7 @@ public class util {
 
     /**
      * 把十进制数转换为62进制
+     *
      * @param num 十进制数
      * @return 62进制字符串
      */
@@ -104,8 +115,9 @@ public class util {
 
     /**
      * 把十进制数转换为n进制
+     *
      * @param num 十进制数
-     * @param n 要转换为几进制
+     * @param n   要转换为几进制
      * @return n进制字符串
      */
     public static String ConvertToStr(long num, int n) throws Exception {
@@ -116,9 +128,8 @@ public class util {
             n = _arrChars.length();
 
         StringBuilder ret = new StringBuilder();
-        do
-        {
-            int perNum = (int)(num % n);
+        do {
+            int perNum = (int) (num % n);
             num = num / n;
             ret.insert(0, _arrChars.charAt(perNum));
         } while (num > 0);
@@ -126,14 +137,28 @@ public class util {
         return ret.toString();
     }
 
-    static Map<Character, Integer> InitArr()
-    {
+    static Map<Character, Integer> InitArr() {
         Map<Character, Integer> ret = new HashMap<>();
-        for (int i = 0, j = _arrChars.length(); i < j; i++)
-        {
+        for (int i = 0, j = _arrChars.length(); i < j; i++) {
             ret.put(_arrChars.charAt(i), i);
         }
 
+        return ret;
+    }
+
+    /**
+     * 获得指定位数的随机串
+     * @param len 指定长度
+     * @return 随机串
+     */
+    public static String generateCode(int len) {
+        int maxNum = _arrChars.length();
+
+        String ret = "";
+        for (int i = 0; i < len; i++) {
+            int num = random.nextInt(maxNum);
+            ret += String.valueOf(_arrChars.charAt(num));
+        }
         return ret;
     }
 

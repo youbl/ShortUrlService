@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: short-url
+
   datasource:
     url: jdbc:sqlite:/urls
     driver-class-name: org.sqlite.JDBC
@@ -7,3 +10,5 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+
+beinet.cn.url-code.type: code # 可选项 id：短码通过自增获得，简单，但是容易被遍历抓取；code：短码通过随机字符串获得，每次新增都要先判断是否重复

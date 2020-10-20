@@ -39,17 +39,17 @@ class numTests {
 
 
     void TestNumToStr(long num, String strNum) throws Exception {
-        String str1 = util.ConvertToStr(num);
+        String str1 = Util.ConvertToStr(num);
         //var str2 = NumHelper.ConvertToStr2(num);
         Assert.isTrue(strNum.equals(str1), "");
         //Assert.AreEqual(str2, str1);
 
-        long numRet = util.ConvertToNum(str1);
+        long numRet = Util.ConvertToNum(str1);
         Assert.isTrue(numRet == num, "");
     }
 
     void TestStrToNum(String strNum, long num) throws Exception {
-        long numOk = util.ConvertToNum(strNum);
+        long numOk = Util.ConvertToNum(strNum);
         Assert.isTrue(num == numOk);
     }
 }

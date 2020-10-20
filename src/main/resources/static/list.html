@@ -48,7 +48,7 @@
             <td colspan="5" style="text-align: center;">未找到数据</td>
         </tr>
         <tr v-for="item in arrData" onmouseover='onRowOver(this);' onmouseout='onRowOut(this);' onclick='onRowClick(this);'>
-            <td><a target="_blank" :href="domain + convertToStr(item.id)">{{ domain }}{{ convertToStr(item.id) }}</a></td>
+            <td><a target="_blank" :href="domain + convertToStr(item.id)">{{ domain }}{{ item.code }}</a></td>
             <td><a target="_blank" :href="item.url">{{ item.url }}</a></td>
             <td>{{ item.desc }}</td>
             <td>
