@@ -15,7 +15,7 @@
                 跳转地址：
             </td>
             <td>
-                <input type="text" v-model="condition.url" style="width: 300px;" />
+                <input type="text" v-model="condition.url" style="width: 300px;"/>
             </td>
         </tr>
         <tr style="height: 22px;">
@@ -23,7 +23,7 @@
                 备注：
             </td>
             <td>
-                <input type="text" v-model="condition.desc" style="width: 300px;" />
+                <input type="text" v-model="condition.desc" style="width: 300px;"/>
             </td>
         </tr>
         <tr style="height: 22px;">
@@ -47,15 +47,19 @@
         <tr v-show="!arrData.length">
             <td colspan="5" style="text-align: center;">未找到数据</td>
         </tr>
-        <tr v-for="item in arrData" onmouseover='onRowOver(this);' onmouseout='onRowOut(this);' onclick='onRowClick(this);'>
-            <td><a target="_blank" :href="domain + convertToStr(item.id)">{{ domain }}{{ item.code }}</a></td>
+        <tr v-for="item in arrData" onmouseover='onRowOver(this);' onmouseout='onRowOut(this);'
+            onclick='onRowClick(this);'>
+            <td><a target="_blank" :href="getShortUrl(item)">{{ getShortUrl(item) }}</a></td>
             <td><a target="_blank" :href="item.url">{{ item.url }}</a></td>
             <td>{{ item.desc }}</td>
             <td>
                 <span style="color: blue;">{{ item.addtime }}</span> <br>
                 {{ item.addip }}
             </td>
-            <td><input type="button" value="编辑" @click="editRecord(item)"></td>
+            <td>
+                <input type="button" value="编辑" @click="editRecord(item)"/>
+                <input type="button" value="二维码" @click="showQrCode(item)"/>
+            </td>
         </tr>
         </tbody>
     </table>
@@ -64,17 +68,17 @@
     var vueApp = new Vue({
         el: '#divVueApp',
         created: function () {
-            let _vue = this;
             let url = location.href;
             let idx = url.indexOf('/', 10);
-            if(idx > 0)
+            if (idx > 0)
                 url = url.substring(0, idx);
-            _vue.domain = url + '?';
+            this.domain = url + '?';
 
-            _vue.loadData();
+            this.loadTypeAndData();
         },
         data: {
             domain: '',
+            isUseCode: false,
             arrData: [],
             condition: {
                 url: 'https://',
@@ -83,85 +87,113 @@
             }
         },
         computed: {
-            btn: function(){
-                if(this.condition.id <= 0)
+            btn: function () {
+                if (this.condition.id <= 0)
                     return '添加新的短网址';
                 return '更新短网址';
             }
         },
-        methods:{
-            loadData: function(){
-                let _vue = this;
-                axios.get('/all').then(function(response){
-                    _vue.arrData = response.data.reverse();
-                }).catch(function (error) {
+        methods: {
+            loadTypeAndData: function () {
+                let url = '/useCode';
+                axios.get(url).then(response => {
+                    this.isUseCode = response.data;
+                    this.loadData();
+                }).catch(error => {
                     console.log(error.message);
                 });
             },
-            addRecord: function() {
-                let _vue = this;
-
-                if (_vue.condition.url.length <= 8) {
-                    alert('请正确输入网址');
-                    return;
-                }
-                _vue.addRecordReal(true, _vue);
+            loadData: function () {
+                axios.get('/all').then(response => {
+                    this.arrData = response.data.reverse();
+                }).catch(error => {
+                    console.log(error.message);
+                });
             },
-            addRecord10: function() {
-                let _vue = this;
+            showQrCode: function (item) {
+                let shortUrl = this.getShortUrl(item);
 
-                if (_vue.condition.url.length <= 8) {
+                let url = 'qrcode?url=' + encodeURIComponent(shortUrl);
+                axios.get(url).then(response => {
+                    const img = new Image();
+                    img.src = "data:image/jpg;base64," + response.data;
+
+                    const newWin = window.open("", "_blank");
+                    newWin.document.write(img.outerHTML);
+                    newWin.document.title = "二维码";
+                    newWin.document.close();
+                }).catch(error => {
+                    console.log(error.message);
+                });
+            },
+            addRecord: function () {
+                if (this.condition.url.length <= 8) {
                     alert('请正确输入网址');
                     return;
                 }
-                if(this.condition.id > 0){
+                this.addRecordReal(true);
+            },
+            addRecord10: function () {
+                if (this.condition.url.length <= 8) {
+                    alert('请正确输入网址');
+                    return;
+                }
+                if (this.condition.id > 0) {
                     alert('更新时不能操作');
                     return;
                 }
                 for (let i = 0; i < 10; i++) {
-                    _vue.addRecordReal(false, _vue);
+                    this.addRecordReal(false, this);
                 }
-                setTimeout(function () {_vue.loadData();}, 3000);
+                let _vue = this;
+                setTimeout(function () {
+                    _vue.loadData();
+                }, 3000);
             },
-            addRecordReal: function(refresh, _vue) {
-                let url = '/?id=' + _vue.condition.id + '&url=' + encodeURIComponent(_vue.condition.url) + '&desc=' + encodeURIComponent(_vue.condition.desc);
-                axios.post(url).then(function (response) {
+            addRecordReal: function (refresh) {
+                let url = '/?id=' + this.condition.id + '&url=' + encodeURIComponent(this.condition.url) + '&desc=' + encodeURIComponent(this.condition.desc);
+                axios.post(url).then(response => {
                     if (!refresh)
                         return;
-                    _vue.cancelUpdagte();
+                    this.cancelUpdagte();
                     if (response.data != '-1')
-                        _vue.loadData();
+                        this.loadData();
                     else
                         alert('添加失败: url重复了');
-                }).catch(function (error) {
+                }).catch(error => {
                     if (error.response && error.response.data && error.response.data.message)
                         alert('添加失败:' + error.response.data.message);
                     else
                         alert('添加失败:' + error.message);
                 });
             },
-            editRecord: function(item) {
+            editRecord: function (item) {
                 this.condition.id = item.id;
                 this.condition.url = item.url;
                 this.condition.desc = item.desc;
             },
-            cancelUpdagte: function() {
+            cancelUpdagte: function () {
                 this.condition.id = 0;
                 this.condition.url = 'http://';
                 this.condition.desc = '';
             },
-            convertToStr: function(num) {
+            getShortUrl: function (item) {
+                if (this.isUseCode) {
+                    return this.domain + item.code;
+                }
+                return this.domain + this.convertToStr(item.id);
+            },
+            convertToStr: function (num) {
                 let _arrChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
                 let n = _arrChars.length;
 
                 let ret = '';
-                do
-                {
+                do {
                     let perNum = (num % n);
                     num = Math.floor(num / n);
                     ret = _arrChars.charAt(perNum) + ret;
                 } while (num > 0);
-                if(ret.length >= 3)
+                if (ret.length >= 3)
                     return ret;
 
                 ret = '00' + ret;

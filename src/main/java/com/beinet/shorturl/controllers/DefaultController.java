@@ -3,13 +3,26 @@ package com.beinet.shorturl.controllers;
 import com.beinet.shorturl.Util;
 import com.beinet.shorturl.repository.entity.Urls;
 import com.beinet.shorturl.services.UrlsService;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import sun.misc.BASE64Encoder;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class DefaultController {
@@ -30,18 +43,20 @@ public class DefaultController {
      * @throws Exception 可能的转换异常
      */
     @GetMapping("")
-    public String getUrl(HttpServletRequest request, HttpServletResponse response, String id) throws Exception {
+    public void getUrl(HttpServletRequest request, HttpServletResponse response, String id) throws Exception {
         if (id == null)
             id = Util.getId(request);
 
-        if (id == null || id.length() <= 0)
-            return "id can't be empty.";
+        if (id == null || id.length() <= 0) {
+            response.getOutputStream().write("id can't be empty.".getBytes());
+            // return "id can't be empty.";
+            return;
+        }
 
         String url = urlsService.getUrl(id);
 
         // 302跳转
         response.sendRedirect(url);
-        return url;
     }
 
     /**
@@ -64,4 +79,44 @@ public class DefaultController {
         return urlsService.getAll();
     }
 
+    /**
+     * 短码使用自增还是随机串
+     *
+     * @return 是否
+     */
+    @GetMapping("useCode")
+    public boolean isUseCode() {
+        return urlsService.useCode();
+    }
+
+    @GetMapping("qrcode")
+    public String getQrcode(String url) throws IOException, WriterException {
+        Map<EncodeHintType, Object> hints = new HashMap<>();
+        //编码
+        hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+        //边框距
+        hints.put(EncodeHintType.MARGIN, 0);
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        BitMatrix img = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, 400, 400, hints);
+        return getImageBase64(img);
+    }
+
+    /**
+     * 图片转base64
+     *
+     * @param img 图片
+     * @return 字符串
+     * @throws IOException exp
+     */
+    public String getImageBase64(BitMatrix img) throws IOException {
+        // BufferedImage img = getImage(text);
+        byte[] bytes;
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            MatrixToImageWriter.writeToStream(img, "png", stream);
+            bytes = stream.toByteArray();
+        }
+        BASE64Encoder encoder = new BASE64Encoder();
+        String png_base64 = encoder.encodeBuffer(bytes).trim();//转换成base64串
+        return png_base64.replaceAll("[\\r\\n]", "");
+    }
 }

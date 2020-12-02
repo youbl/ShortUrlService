@@ -148,6 +148,7 @@ public class Util {
 
     /**
      * 获得指定位数的随机串
+     *
      * @param len 指定长度
      * @return 随机串
      */
